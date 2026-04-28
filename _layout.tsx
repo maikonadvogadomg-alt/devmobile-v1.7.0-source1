@@ -1,69 +1,151 @@
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  useFonts,
-} from "@expo-google-fonts/inter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
-import { View } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { KeyboardProvider } from "react-native-keyboard-controller";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { BlurView } from "expo-blur";
+import { Tabs } from "expo-router";
+import { Feather } from "@expo/vector-icons";
+import React from "react";
+import { Platform, StyleSheet, Text, View, useColorScheme } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import FloatingAI from "@/components/FloatingAI";
-import { AppProvider } from "@/context/AppContext";
+import { useColors } from "@/hooks/useColors";
 
-SplashScreen.preventAutoHideAsync();
+export default function TabLayout() {
+  const colors = useColors();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const isIOS = Platform.OS === "ios";
+  const isWeb = Platform.OS === "web";
+  const insets = useSafeAreaInsets();
 
-const queryClient = new QueryClient();
+  const TAB_HEIGHT = isWeb ? 62 : 60;
+  const bottomSafe = isWeb ? 0 : Math.max(insets.bottom, 16);
+  const tabBarHeight = TAB_HEIGHT + bottomSafe;
 
-function RootLayoutNav() {
-  return (
-    <View style={{ flex: 1 }}>
-      <StatusBar style="light" translucent={false} />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
-      <FloatingAI />
+  const TabIcon = ({
+    name,
+    label,
+    color,
+    focused,
+  }: {
+    name: React.ComponentProps<typeof Feather>["name"];
+    label: string;
+    color: string;
+    focused: boolean;
+  }) => (
+    <View style={[styles.tabItem, focused && { backgroundColor: color + "18" }]}>
+      <Feather name={name} size={18} color={color} />
+      <Text style={[styles.tabLabel, { color }]}>{label}</Text>
     </View>
   );
-}
-
-export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-  });
-
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
-
-  if (!fontsLoaded && !fontError) return null;
 
   return (
-    <SafeAreaProvider>
-      <ErrorBoundary>
-        <AppProvider>
-          <QueryClientProvider client={queryClient}>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <KeyboardProvider>
-                <RootLayoutNav />
-              </KeyboardProvider>
-            </GestureHandlerRootView>
-          </QueryClientProvider>
-        </AppProvider>
-      </ErrorBoundary>
-    </SafeAreaProvider>
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.mutedForeground + "99",
+        headerShown: false,
+        tabBarShowLabel: false,
+        tabBarStyle: {
+          position: "absolute",
+          backgroundColor: isIOS ? "transparent" : colors.card + "f5",
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: colors.border,
+          elevation: 0,
+          height: tabBarHeight,
+          paddingBottom: bottomSafe,
+          paddingTop: 4,
+        },
+        tabBarBackground: () =>
+          isIOS ? (
+            <BlurView
+              intensity={90}
+              tint={isDark ? "dark" : "dark"}
+              style={StyleSheet.absoluteFill}
+            />
+          ) : (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.card + "f5" }]} />
+          ),
+        tabBarIconStyle: { marginBottom: 0 },
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Projetos",
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="folder" label="Projetos" color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="editor"
+        options={{
+          title: "Editor",
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="code" label="Editor" color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="terminal"
+        options={{
+          title: "Terminal",
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="terminal" label="Terminal" color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="tasks"
+        options={{
+          title: "Tarefas",
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="check-square" label="Tarefas" color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="plugins"
+        options={{
+          title: "Plugins",
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="package" label="Plugins" color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="ai"
+        options={{
+          title: "IA",
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="cpu" label="IA" color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: "Config",
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="settings" label="Config" color={color} focused={focused} />
+          ),
+        }}
+      />
+    </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabItem: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 2,
+    minWidth: 44,
+  },
+  tabLabel: {
+    fontSize: 9,
+    fontWeight: "600",
+    letterSpacing: 0.2,
+  },
+});
